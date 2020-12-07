@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> CS460: Lecture 24.1 | UMAP: Uniform Manifold Approximation & Projection </title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <!-- Prism -->
+    <link href="styles/prism.css" rel="stylesheet">
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js"></script>
+    <!-- Clipboard for Prism -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script>
+</head>
+
+<body class="line-numbers">
+    <div class="container">
+        <h1 id="top">UMAP: Uniform Manifold Approximation and Projection</h1>
+        <h3 style="text-align: center;">
+            In partial fulfilment of CS460: Machine Learning | By Jyotirmaya Shivottam<sup>[<a href="mailto:jyotirmaya.shivottam@niser.ac.in">a</a>]</sup><sup>[<a target="_blank" href="https://github.com/JeS24/">b</a>]</sup>
+        </h3>
+        <br>
+        <hr class="wait">
+        <div class="wait" style="text-align: center;">
+            <h3> Table of Contents</h3>
+            <p>
+            <a href="#intro"> Introduction <br> </a>
+            <a class="bluePill" href="#how-umap-works"> How UMAP works? <br> </a>
+            <a class="redPill" href="#how-umap-works-detailed"> How UMAP works? (Detailed) <br> </a>
+            <a href="#code-vis"> Code & Visualization  <br> </a>
+            <a href="#ref"> References & Additional Resources</a>
+            </p>
+            <sub style="margin: 0 auto; text-align: center; font-size: 80%;">If you encounter errors of any sort, please open an issue here: <a target="_blank" href="https://github.com/JeS24/umap-cs460">GitHub</a></sub>
+        </div>
+
+        <hr id="intro">
+        
+        <section>
+            <h3> Introduction </h3>
+
+            <p>
+                Dimensionality reduction techniques form a core part of Data Science and Applied Machine Learning. These methods help in visualizing data, as well as pre-processing it for various machine learning pipelines. Due to computational constraints, we usually want to know, which of the features in our dataset are actually important to what we are studying and dimensionality reduction is a standard approach to figure out the relevant or "latent" features. As a bonus, these methods help us obtain a low-dimensional embedding of the data, that is helpful for visualization purposes, with minimal to no loss of contextual information.
+
+                <br><br>
+
+                Many dimensionality reduction algorithms exist today, broadly falling under 
+                either Matrix Factorization methods, such as Principal Component Analysis, Autoencoder or Word2Vec, or methods, that make use of Neighbor Graphs, like Laplacian Eigenmaps or t-Distributed Stochastic Neighbor Embedding (tSNE). The difference between both types comes down to the preservation of overall structure of the data. Former algorithms preserve the pairwise distance between datapoints, while the latter preserve either the local or global structure. tSNE has been the state-of-the-art algorithm for almost a decade now, prioritizing local, over global structure, only recently being supplanted by UMAP, that claims to preserve complete local structure and most of the global structure.
+                
+                <br><br>
+
+                UMAP, an acronym for Uniform Manifold Approximation and Projection, is a recent unsupervised ML technique, that has rapidly increased in popularity and usage and is now considered state-of-the-art, owing to the massive speed improvements and scalability it delivers over tSNE and other algorithms. Moreover, the original paper (referenced below) also lays out a nice mathematical foundation for the Neighbor Graphs approach, that is helpful for further research and applications. For example, <a target="_blank" href="https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html">HDBSCAN</a> is a clustering algorithm, that has seen better results, when applied to outputs from UMAP.
+            </p>
+
+            <p>
+                If one reads the original paper, one shall find that it does not shy away from getting into the mathematical details. This is a good thing, because, as mentioned earlier, it has provided a framework for Neighbor Graph algorithms. <span id="redPillText">So, let us delve into a little descriptive math, that shapes this algorithm. </span> <span id="bluePillText1"> However, for most of us, it can get rather arcane.</span> <span id="bluePillText2">So, let us distil down the algorithm and talk about the high-level components, that shape it. </span> <span id="metaText">So here, I offer you a choice:</span>
+            </p>
+
+            <div class="meta" title="Choose wisely...">
+                <button title="The red pill or..." id="redP" onclick="redPill()"></button>
+                <button title="...the blue pill?" id="blueP" onclick="bluePill()"></button>
+                <sub>You gotta click/tap either pill.</sub>
+            </div>
+            <!-- Now, you may be wondering, why I chose to not include, what these options mean, in the image or the tooltip. My answer to that is, neither did Morpheus - "All I am offering is the truth." -->
+
+        </section>
+
+        <hr id="how-umap-works" class="bluePill">
+
+        <section class="bluePill">
+            <h3 > How UMAP works? </h3>
+            
+            <p>
+                Broadly speaking, the algorithm can be understood as a 3-step process:
+
+                <br>
+
+                <h4 style="font-weight: bold;">Step 1: Creation of Fuzzy complexes</h4>
+                <br>
+                The algorithm takes each datapoint and identifies their \(n-\)Nearest Neighbors. Then, it plots sets or complexes containing all these neighbors, around each point. These sets are "fuzzy", as they are based not on whether a point falls in this neighborhood set, but on a probabilistic weight, from \(0\) to \(1\). Here, \(n\) is a hyperparameter for this algorithm.
+                <br><br>
+                Let us consider an example of a noisy sine-wave distribution to better visualize this. Also, for simplicity's sake, let us assume these "fuzzy sets or complexes" to be circles.
+
+                <img class="umap-img" src="images/noisy_sine.png" title="Noisy Sine Wave Distribution" alt="Noisy Sine Wave Distribution">
+                
+                Fixing \(n = 1\), which is equivalent to a circle radius of \(1\), we arrive at the following result:
+                
+                <img class="umap-img" src="images/fuzzy_sets.png" title="Fuzzy Complexes" alt="Fuzzy Complexes">
+                
+                <br>
+                <h4 style="font-weight: bold;">Step 2: Graph Generation</h4>
+                <br>
+                The next step entails using the fuzzy sets to generate a graph, where the datapoints act as nodes; edges are formed only between the \(n-\)neighbors, and the weights are assigned, based on the distance function, chosen during the first step, which, for our case, is pairwise distance, giving us a probabilistic output between \(0\) and \(1\).
+
+                <img class="umap-img" src="images/graph.png" title="Graph" alt="Graph">
+
+                Remember, this is just another representation of the second image above, but this is computationally far more convenient to work with (as it is just a graph). Another notable point is that this representation does a reasonable job of starting to capture the fundamental structure of the dataset. The cause for this is rooted in a theorem called the <a target="_blank" href="https://en.wikipedia.org/wiki/Nerve_of_a_covering">Nerve Theorem</a>.
+
+                <br>
+                <h4 style="font-weight: bold;">Step 3: Force-Directed Layout</h4>
+                <br>
+                Now, we want to find a low-dimensional representation of our data. In UMAP, as with kNN, the closeness of two points is taken as a measure of how "related" they are. As such, the weights on the edges play an important role in clustering related datapoints. UMAP considers the weights as a "physical force" of sorts, pushing or pulling on each point, and passes it through a particular loss function, that can account for these forces and give us a stable output. As an additional step, it optimizes the loss function to get the most suitable low-dimensional representation of our data. Since the weights are simply Bernoulli variables (probabilistic), UMAP uses Binary Cross Entropy as the loss function. Its mathematical form is given below:
+
+                \[
+                    \boxed{\sum_{e \in E} w_h(e) \log\left(\frac{w_h(e)}{w_l(e)}\right) + (1 - w_h(e))\log\left(\frac{1 - w_h(e)}{1 - w_l(e)}\right)}
+                \]
+                Here, \(E\) is the edge-set and \(w_h\) and \(w_l\) represent the weights in the high and low dimensional cases, respectively. The first term provides the "attractive force" across an edge, whenever there is a larger weight associated to the high dimensional case, because for large \(w_l\), this term will be minimized, which signifies the smallest possible distance between datapoints. On the other hand, the second term provides a "repulsive force", that is minimized by smaller values for \(w_l\), implying a larger distance between datapoints. So, in a sense, the first term helps group related data (local structure), while the second term helps in spacing out unrelated data (global structure).
+                <br><br>
+                From a machine learning perspective, note that, the loss function is "local", as it depends on pairs of datapoints. As such, the weights depends on at most \(2k - 1\) points, implying that the computational cost does not grow with dataset size. Finally, optimizing this push & pull process through Stochastic Gradient Descent or similar algorithms, we arrive at a stable low-dimensional representation of our data, that relatively accurately captures the overall structure. Notice the clean separation between yellower and bluer points, as also present in the original data.
+                
+                <img class="umap-img" src="images/output.png" title="UMAP Output" alt="UMAP Output">
+            </p>
+            <p>
+                Now, let us take some real-world datasets and apply UMAP to better understand the hyperparameters of this algorithm.
+            </p>
+        </section>
+
+        <hr id="how-umap-works-detailed" class="redPill">
+
+        <section class="redPill">
+            <h3 > How UMAP works? (Detailed) </h3>
+                <p>
+                    Broadly speaking, UMAP assumes an underlying manifold structure to the data and uses local manifold approximations to obtain fuzzy simplicial sets, that are patched together to construct a topological representation of the high-dimensional data. This is essentially a Force-Directed graph. A similar process can be used to construct a low-dimensional representation and then UMAP minimizes the Binary Cross Entropy between these representations to obtain a stable low-dimensional representation.
+
+                    <br><br>
+                    <sub>Sidenote: A simplicial complex is just a collection of <a target="_blank" href="https://en.wikipedia.org/wiki/Simplex">simplices</a>, glued together. See picture below - smaller simplices have been attached to form larger simplicial complexes.</sub>
+
+                    <img class="umap-img complex" src="images/complex.png" title="Simplicial Complex" alt="Simplicial Complex">
+                </p>
+                <p>
+                    Assume that, the dataset has a topological structure to it. Then, as with most dimensionality reduction techniques, we want to accurately capture this topology of the datapoint-space. An initial step would be to try to generate an <a target="_blank" href="https://en.wikipedia.org/wiki/Cover_(topology)">Open Cover</a>. Let us take a noisy sine-wave distribution, assumed to be associated with a manifold.
+
+                    <img class="umap-img" src="images/noisy_sine.png" title="Noisy Sine Wave Distribution" alt="Noisy Sine Wave Distribution">
+                    
+                    Also, for simplicity's sake, let us assume the covered open sets to be unit circles.
+                    
+                    <img class="umap-img" src="images/fuzzy_sets.png" title="Fuzzy Complexes" alt="Fuzzy Complexes">
+
+                    Recall that, presence of a manifold implies presence of a metric and this help us define local distances. We can utilize these to form simplicial complexes, specifically the <a target="_blank" href="https://en.wikipedia.org/wiki/Vietoris%E2%80%93Rips_complex">Vietoris–Rips Complex</a>. Then, we can describe the simplicial complexes of 0-, 1-, and 2-simplexes (all in 2D) as points, lines, and triangles.
+
+                    <img class="umap-img" src="images/graph.png" title="Vietoris–Rips Complex" alt="Vietoris–Rips Complex">
+
+                    Note that, this captures the topology really well. The gaps and locally dense clusters have been represented by absence and over-abundance of edges, respectively. The cause for this is rooted in the <a target="_blank" href="https://en.wikipedia.org/wiki/Nerve_of_a_covering">Nerve Theorem</a>.
+                    <br><br>
+                    While all this sounds feasible, applying the same on actual data has more practicalities. These have been detailed below:
+
+                </p>
+                <p>
+                    <p style="font-weight: bold;">
+                        How do we choose the correct radius for our cover?
+                    </p>
+                    Usually, the answer is trial and error. But we know that algorithms, lke Laplacian Eigenmaps overcome this issue with a simple uniformity assumption on the data. This assumption may not hold all the time, but this leads us to ask, what is there to know about a uniform dataset?
+                    <br><br>
+                    <span style="font-style: italic;">Enter <a target="_blank" href="https://en.wikipedia.org/wiki/Riemannian_geometry">Riemannian Geometry</a>.</span>
+                    <br><br>
+                    General Relativity folks might know the idea. Expand and contract the datapoint-space, so that the uniform-distance assumption becomes true, i.e., define local metric spaces, so that the neighborhood distances remain constant.
+                    
+                    <img class="umap-img" src="images/ballplot1.png" title="Ball Plot in Euclidean 2D space" alt="Ball Plot in Euclidean 2D space">
+
+                    In the image above, the distances seem to vary, but that is a result of projecting from Riemannian to Euclidean space. With the definitions of the local distance functions (metric), the distances are, in fact, the same. As a bonus, these functions help us determine the edge-weights in the simplicial complex. We can go one step further and make these weights fuzzy, i.e., the certainty of the presence of a datapoint in a circle of a given radius decays, as we move away from the center of the circle.
+                    
+                    <img class="umap-img" src="images/ballplot2.png" title="Fuzzy Ball Cover" alt="Fuzzy Ball Cover">
+
+                    <p style="font-weight: bold;">
+                        What about datapoints, that are completely isolated in the higher dimensions?
+                    </p>
+                    Here, UMAP makes an assumption of <span style="font-style: italic;">local connectivity</span>, i.e., nearest-neighbor distance is prioritized over absolute distances. This effectively bypasses the Curse of Dimensionality, as neigborhood distances are forced to be small and constant, due to the Riemannian metric.
+
+                    <p style="font-weight: bold;">
+                        But are the local metrics not incompatible?
+                    </p>
+                    Yes, they are. But recall that for our use-case, simplicial complexes are essentially graphs. To overcome this issue, we can make our graph directed with mutual weights assigned to pairs of edges between neighborhood points.
+                    
+                    <img class="umap-img" src="images/directed1.png" title="Directed Graph with incompatible weights" alt="Directed Graph with incompatible weights">
+
+                    Now, we need to symmetrize. And UMAP does this via a probabilistic interpretation of the weights (say, \(a\) & \(b\) for edges between 2 points), giving us the combined weight as:
+                    \[\boxed{a + b - a.b}.\]
+                    Think of \(a\) and \(b\) as effective probabilities of existence of edges between two points. Then, the overall probability is the sum of these probabilities, minus their product. Applying this process to all the points, we can combine all the fuzzy simplicial sets, ending up with a single complex or analogously, a weighted graph.
+
+                    <img class="umap-img" src="images/directed2.png" title="Directed Graph with symmetrized weights" alt="Directed Graph with symmetrized weights">
+
+                    <p style="font-weight: bold;">
+                        How do we find the low-dimensional topological embedding?
+                    </p>
+                    From the manifold assumption about the data, we know that the data is located on the low-dimensional Euclidean space, which is what, we are trying to embed. This provides us a global Euclidean distance measure. Now, we need to match our fuzzy topology with a good low-dimensional topology and this can be taken as an Optimization problem. UMAP chooses Binary Cross Entropy to measure the dissimilarity between the two representations. Its mathematical form is given below:
+
+                    \[
+                        \boxed{\sum_{e \in E} w_h(e) \log\left(\frac{w_h(e)}{w_l(e)}\right) + (1 - w_h(e))\log\left(\frac{1 - w_h(e)}{1 - w_l(e)}\right)}
+                    \]
+                    Here, \(E\) is the edge-set and \(w_h\) and \(w_l\) represent the weights in the high and low dimensional cases, respectively. The first term provides an "attractive force" across an edge, whenever there is a larger weight associated to the high dimensional case, because for large \(w_l\), this term will be minimized, which signifies the smallest possible distance between datapoints. On the other hand, the second term provides a "repulsive force", that is minimized by smaller values for \(w_l\), implying a larger distance between datapoints. So, in a sense, the first term helps group related data (local structure), while the second term helps in spacing out unrelated data (global structure).
+
+                    <br><br>
+                    From a machine learning perspective, note that, this loss function is "local", as it depends on pairs of datapoints. As such, the weights depends on at most \(2k - 1\) points, implying that the computational cost does not grow with dataset size. Finally, optimizing this push & pull process, we arrive at a stable low-dimensional representation of our data, that relatively accurately captures the overall structure. Notice the clean separation between yellower and bluer points, as also present in the original data.
+
+                    <img class="umap-img" src="images/output.png" title="UMAP Output" alt="UMAP Output">
+
+                    <sub>
+                        Sidenote: In practice, UMAP uses <a target="_blank" href="https://dl.acm.org/doi/10.1145/1374376.1374452">Random Projection Trees</a> and <a href="https://dl.acm.org/doi/10.1145/1963405.1963487">Nearest Neighbor Descent</a> to efficiently obtain the nearest neighbors and the fuzzy simplicial complexes. For optimization, it uses Stochastic Gradient Descent with negative sampling to quickly reach a stable, low-dimensional representation.
+                    </sub> 
+                </p>
+
+                <p>
+                    Now let us take some real world datasets and apply UMAP to better understand the hyperparameters of this algorithm.
+                </p>
+
+        </section>
+
+        <hr id="code-vis" class="wait">
+
+        <section class="wait">
+            <h3 > Code & Visualization </h3>
+        
+            <p>
+                For this part, we will make use of <a target="_blank" href="https://pypi.org/project/umap-learn/"><code>umap-learn</code></a>, a Python library from the authors of the original paper. To run the code on your machine, please go through the requirements of the package and then install it through <code>conda</code> or  <code style="border: 1px rgba(128, 128, 128, 0.8) solid; padding: 0 2.5px;">python -m pip install umap-learn[plot]</code>. Here, <code>[plot]</code> installs the dependencies for the plotting module. Also, all the code snippets here can be found in a <a target="_blank" href="https://github.com/JeS24/umap-cs460/">Jupyter Notebook</a>.
+            </p>
+
+            <p>
+                Now, let us import the required libraries and <a target="_blank" href="https://scikit-learn.org/stable/datasets/index.html">load or fetch</a> some datasets - Digits, MNIST and FashionMNIST. We will be using the latter two for showcasing how UMAP would embed them into a 2D space, while the analysis of UMAP hyperparameters would be done on the smaller Digits dataset. Also, note that, while <code>umap-learn</code> supports supervised learning through an optional parameter, we will be focusing on the unsupervised aspect.
+                <pre><code class="language-python">import umap as u
+# umap.plot may raise errors as of umap-learn-0.4.6
+from umap import plot as uplot
+
+import matplotlib.pyplot as plt
+from sklearn import datasets
+
+# Datasets
+digits = datasets.load_digits()
+mnist = datasets.fetch_openml('mnist_784')
+fmnist = datasets.fetch_openml('Fashion-MNIST')</code></pre>
+
+                Having loaded in the datasets, let us define a small function to help visualize what these datasets look like.
+
+                <pre><code class="language-python">def plot_data(data):
+    """
+    Plots part of the data (100 datapoints)
+    Adapted from: https://umap-learn.readthedocs.io/en/latest/basic_usage.html
+
+    Parameters
+    ----------
+    data: numpy.ndarray
+        Image (2D) data to plot
+
+    """
+    fig, ax_array = plt.subplots(10, 10)
+    axes = ax_array.flatten()
+
+    for i, ax in enumerate(axes):
+        if data[i].ndim != 2:
+            size = int(np.sqrt(data[i].shape[0]))
+            ax.imshow(data[i].reshape((size, size)), cmap='gray_r')
+        else:
+            ax.imshow(data[i], cmap='gray_r')
+
+    plt.setp(axes, xticks=[], yticks=[], frame_on=False)
+    plt.tight_layout(pad=0., h_pad=0.1, w_pad=0.)
+
+plot_data(digits.images)
+plot_data(mnist.data)
+plot_data(fmnist.data)</code></pre>
+
+
+                <div id="data-images">
+                    <img class="data-imgs" src="images/digits.png" title="Digits Dataset" alt="Digits Dataset">
+                    <img class="data-imgs" src="images/mnist.png" title="MNIST Dataset" alt="MNIST Dataset">
+                    <img class="data-imgs" src="images/fmnist.png" title="FashionMNIST Dataset" alt="FashionMNIST Dataset">
+                </div>
+
+                As we can see, Digits is just a lesser-resolution handwritten digits dataset, as compared to MNIST; and FashionMNIST is a fashion-item counterpart to MNIST, with similar attributes. <code>umap</code> provides a class, <code>UMAP</code>, that has <code>fit()</code> and <code>fit_transform()</code> methods to create an embedding in low-dimensional space and to return the embedded data, respectively. To visualize the effect of UMAP, we will use <code>UMAP().fit()</code> (with default hyperparameters) on MNIST and FashionMNIST and plot the output as an interactive graph. Since, <code>bokeh</code>, the python library used for interactive plotting, does not support an arbitrarily large number of labels, we will be using a subset of the datasets.
+
+                <pre><code class="language-python"># MNIST: 30000
+hover_data_mnist = pd.DataFrame({'index':np.arange(30000), 'label':mnist.target[:30000]})
+hover_data_mnist['item'] = hover_data_mnist.label.map(
+    {
+        '0':'0',
+        '1':'1',
+        '2':'2',
+        '3':'3',
+        '4':'4',
+        '5':'5',
+        '6':'6',
+        '7':'7',
+        '8':'8',
+        '9':'9',
+    }
+)
+
+labels_mnist = mnist.target[:30000]
+
+p_mnist30k = uplot.interactive(map_mnist30k, labels=labels_mnist, hover_data=hover_data_mnist, point_size=2, theme="fire")
+# Styling code is in Jupyter Notebook
+uplot.show(p_mnist30k)
+
+# FashionMNIST: 30000
+hover_data_fmnist = pd.DataFrame({'index':np.arange(30000), 'label':fmnist.target[:30000]})
+hover_data_fmnist['item'] = hover_data_fmnist.label.map(
+    {
+        '0':'T-Shirt/top',
+        '1':'Trouser',
+        '2':'Pullover',
+        '3':'Dress',
+        '4':'Coat',
+        '5':'Sandal',
+        '6':'Shirt',
+        '7':'Sneaker',
+        '8':'Bag',
+        '9':'Ankle Boot',
+    }
+)
+
+labels_fmnist = fmnist.target[:30000]
+
+p_fmnist30k = uplot.interactive(map_fmnist30k, labels=labels_fmnist, hover_data=hover_data_fmnist, point_size=2, theme="fire")
+# Styling code is in Jupyter Notebook
+uplot.show(p_fmnist30k)</code></pre>
+                
+                <div class="int-plots">
+                    <script src="scripts/fmnist30k_int.js" id="86e4279e-6b16-4890-bdd7-245412a1513d"></script>
+                    <script src="scripts/mnist30k_int.js" id="203e47bb-a9ad-4e88-aac5-fa65c60ed376"></script>
+                </div>
+
+                These interactive plots are a nice way to play around with the output and see, how UMAP groups together related points. However, one might observe that some datapoints seem to merge together, while a number of points seem to be mis-grouped. This is an artefact of choosing a smaller subset. If we take the entire dataset, we achieve far better results.
+
+                <pre><code class="language-python">map_mnist = u.UMAP().fit(mnist.data)
+map_fmnist = u.UMAP().fit(fmnist.data)
+uplot.points(map_mnist, labels=mnist.target, width=400, height=400, theme="fire")
+uplot.points(map_fmnist, labels=fmnist.target, width=400, height=400, theme="fire")
+# Styling code is in Jupyter Notebook</code></pre>
+
+                <div class="stat-plots">
+                   <img src="images/mnist_stat.png" title="2D Embedding for MNIST" alt="2D Embedding for MNIST">
+                   <img src="images/fmnist_stat.png" title="2D Embedding for FashionMNIST" alt="2D Embedding for FashionMNIST">
+                </div>
+
+                From the plots, we can see, how UMAP accurately groups together "related" datapoints for each category, while also maintaining a sufficiently large gap between "less related" datapoints, thereby correctly capturing the local information. More specifically, note that, for MNIST, fours and nines are close together, but these are further away from sixes and zeros, which use quite different strokes. This is an example of how UMAP successfully captures the global information.
+                <br><br>
+                Similar properties can be observed with the FashionMNIST plot. Footwear items (Sneakers, Boots, Sandals) are spaced away from topwear items (T-Shirts, Dresses, Coat, Pullover), while locally, relevant items are huddled together.
+
+                <br><br>
+                Now that we have gained a qualitative understanding of UMAP's output, let us tweak its hyperparameters and observe the changes, on Digits dataset. The most important hyperparameter is certainly the number of neighbors, \(n\), but the local separation between points become important to make sense of an embedding. This is accomplished by tweaking  <code>min_dist</code> and <code>spread</code>. As the names suggest, these control the minimum distance between the points (local) and the overall spread of the data (global), respectively, with <code>min_dist</code> \(\le\) <code>spread</code>. Here, we will keep <code>spread</code> fixed at its default value of \(1.0\) and change only <code>n_neighbors</code> and <code>min_dist</code>, as these two effectively control the balance between local and global structures.
+
+                <br><br>
+
+                First, let us plot the embedding for Digits, using default UMAP hyperparameters (<code>n_neighbors</code> \(= 15\) and <code>min_dist</code> \(= 0.1\)):
+                
+                <pre><code class="language-python">hover_data_digits = pd.DataFrame({'index':digits.data.shape[0], 'label':digits.target})
+
+labels_digits = digits.target
+
+p_digits = uplot.interactive(map_digits, labels=labels_digits, hover_data=hover_data_digits, point_size=2, theme="fire")
+# Styling code is in Jupyter Notebook
+uplot.show(p_digits)</code></pre>
+
+                <div class="int-plots">
+                    <script src="scripts/digits_int.js" id="d14a9a31-04f8-43a9-baca-79da403ae608"></script>
+                </div>
+                
+                Now, let us take combinations of various <code>n_neighbors</code> and <code>min_dist</code> values and plot them together.
+
+                <pre><code class="language-python">import itertools
+
+n_n = [5, 30]
+m_d = [0.1, 0.9]
+combinations = list(itertools.product(n_n, m_d))
+
+for n, md in combinations:
+    embed = vary_hyperparameters(n_neighbors=n, min_dist=md)
+    uplot.connectivity(embed, labels=digits.target, show_points=True, width=400, height=400, background="black", color_key_cmap="rainbow", edge_cmap="seismic_r")</code></pre>
+
+                <div class="stat-plots">
+                    <img src="images/digits_5_1.png" title="Embedding for Digits Dataset with n = 5 and min_dist = 0.1" alt="Embedding for Digits Dataset with n = 5 and min_dist = 0.1">
+                    <img src="images/digits_5_9.png" title="Embedding for Digits Dataset with n = 5 and min_dist = 0.9" alt="Embedding for Digits Dataset with n = 5 and min_dist = 0.9">
+                    <img src="images/digits_30_1.png" title="Embedding for Digits Dataset with n = 30 and min_dist = 0.1" alt="Embedding for Digits Dataset with n = 30 and min_dist = 0.1">
+                    <img src="images/digits_30_9.png" title="Embedding for Digits Dataset with n = 30 and min_dist = 0.9" alt="Embedding for Digits Dataset with n = 30 and min_dist = 0.9">
+                </div>
+
+                A few things jump at us from these plots. Let us summarize these:
+
+                <ul>
+                    <li><code>n_neighbors</code> is used to construct the high-dimensional graph, thus controlling how local vs global structures are balanced. As with kNN, lower values of \(n\) imply that UMAP will be constrained to consider local information in fine detail, while foregoing most of the global information and vice-versa.</li>
+                    <li>Note the abundance of edges between the zeros-cluster (purple) and other clusters, when \(n\) is increased. This shows that there can be some hidden relations between seemingly unrelated groups and tuning \(n\) is an easy way to expose those.</li>
+                    <li><code>min_dist</code> controls how tightly points are clumped together in the low-dimensional space. Larger values imply that UMAP will prioritize the overall structure with less emphasis on local clustering.</li>
+                    <li class="redPillList">
+                        From a mathematical standpoint, \(n\) determines the estimation of the local Riemann metric. Small \(n\) implies lesser space covered by a metric, resulting in rapid metric variation throughout the dataset, which exposes finer details, and vice-versa.
+                    </li>
+                </ul>
+                A excellent resource to experiment with these UMAP hyperparameters on the web, is <a target="_blank" href="https://pair-code.github.io/understanding-umap/">Understanding UMAP</a> by Andy Coenen and Adam Pearce. They have also provided a comparison between UMAP and tSNE, the former state-of-the-art. Some other resources for similar visualizations and comparisons can be found in the next section. Meanwhile, consider the following tables from the original UMAP paper:
+                
+                <div class="tables">
+                    <img src="images/runtime.png" title="UMAP: Runtime comparison (Open in new tab to get an enlarged view)" alt="UMAP: Runtime comparison (Open in new tab to get an enlarged view)">
+                    <img src="images/scaling.png" title="UMAP: Scaling with input size (Open in new tab to get an enlarged view)" alt="UMAP: Scaling with input size (Open in new tab to get an enlarged view)">
+                </div>
+
+                These massive runtime and scalability improvements make UMAP a powerful data preprocessing tool. However, one must understand the hyperparameters of the algorithm before using it, as the algorithm is stochastic and reruns are needed to properly interpret the output. Also, even though UMAP is state-of-the-art and should form a part of any ML pipeline, it is not a panacea. For example, for linear problems, algorithms like PCA may be faster and provide a far better understanding of the data. UMAP may also struggle with sparse datasets, although this is typical for Network Graph algorithms. Understanding UMAP and the math behind it is recommended, as it provides excellent insights into a whole class of dimension-reduction algorithms and has led to newer algorithms, that are more suited than UMAP to particular applications (such as <a target="_blank" href="https://www.biorxiv.org/content/10.1101/2020.05.12.077776v1">DensMap</a>).
+            </p>
+        </section>
+
+        <hr id="ref">
+
+        <section class="references">
+            <h3>References & Additional Resources</h3>
+
+            <ul>
+                <li id="arxiv">
+                    Original Paper:
+                    <cite>
+                        <a target="_blank" href="https://arxiv.org/abs/1802.03426">UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction</a>; McInnes, Leland; Healy, John; Melville, James.
+                    </cite>
+                </li>
+                <li id="arxiv">
+                    Distilled version of the original paper:
+                    <cite>
+                        <a target="_blank" href="https://www.programmersought.com/article/78774869630/">UMAP: Better dimensionality reduction algorithm than t-SNE</a>; McInnes, Leland; Healy, John; Melville, James.
+                    </cite>
+                </li>
+                <li id="yt">
+                    SciPy 2018 Talk on UMAP:
+                    <cite>
+                        <a target="_blank" href="https://www.youtube.com/watch?v=nq6iPZVUxZU">UMAP Uniform Manifold Approximation and Projection for Dimension Reduction | SciPy 2018</a>; McInnes, Leland.
+                    </cite>
+                </li>
+                <li id="git">
+                    <code>umap</code> GitHub Repository:
+                    <cite>
+                        <a target="_blank" href="https://github.com/lmcinnes/umap">UMAP</a>.
+                    </cite>
+                </li>
+                <li id="overview">
+                    Overview of the algorithm, with practical details:
+                    <cite>
+                        <a target="_blank" href="https://umap-learn.readthedocs.io/en/latest/how_umap_works.html">How UMAP Works</a>; <code>umap</code> - Read The Docs.
+                    </cite>
+                </li>
+                <li id="viz2">
+                    List of Interactive Visualizations:
+                    <cite>
+                        <a target="_blank" href="https://umap-learn.readthedocs.io/en/latest/interactive_viz.html">Interactive Visualizations</a>; <code>umap</code> - Read The Docs.
+                    </cite>
+                </li>
+                <li id="viz">
+                    Tons of tweakable visualizations of UMAP and comparison with tSNE:
+                    <cite>
+                        <a target="_blank" href="https://pair-code.github.io/understanding-umap/">Understanding UMAP</a>; Coenen, Andy and Pearce, Adam.
+                    </cite>
+                </li>
+                <li id="scratch">
+                    Insights into the algorithm:
+                    <cite>
+                        <a target="_blank" href="https://towardsdatascience.com/how-to-program-umap-from-scratch-e6eff67f55fe">How to Program UMAP from Scratch</a>; Oskolkov, Nikolay.
+                    </cite>
+                </li>
+                <li id="compare">
+                    Comparison among several Neighbor Graph algorithms:
+                    <cite>
+                        <a target="_blank" href="https://jlmelville.github.io/uwot/umap-for-tsne.html">UMAP for t-SNE</a>; Melville, James.
+                    </cite>
+                </li>
+            </ul>
+        </section>
+
+        <hr/>
+    </div>
+    <button onclick="document.getElementById('top').scrollIntoView();" id="toTop" title="Scroll to top">Top</button>
+    <script type="text/javascript">
+        // KaTeX
+        renderMathInElement(document.body);
+        
+        // Meta
+        function redPill() {
+            meta = document.getElementsByClassName("meta");
+            for (var i = 0; i < meta.length; i++) {
+                meta[i].style.display = "none";
+            }
+            blue = document.getElementsByClassName("bluePill");
+            for (var i = 0; i < blue.length; i++) {
+                blue[i].style.display = "none";
+            }
+            wait = document.getElementsByClassName("wait");
+            for (var i = 0; i < wait.length; i++) {
+                wait[i].style.display = "block";
+            }
+            red = document.getElementsByClassName("redPill");
+            for (var i = 0; i < red.length; i++) {
+                red[i].style.display = "block";
+            }
+            redPillList = document.getElementsByClassName("redPillList");
+            for (var i = 0; i < redPillList.length; i++) {
+                redPillList[i].style.display = "list-item";
+            }
+
+            document.getElementById('metaText').style.display = "none";
+            document.getElementById('bluePillText1').style.display = "none";
+            document.getElementById('redPillText').style.display = "inline";
+            document.getElementById('how-umap-works-detailed').scrollIntoView();
+        }
+        function bluePill() {
+            meta = document.getElementsByClassName("meta");
+            for (var i = 0; i < meta.length; i++) {
+                meta[i].style.display = "none";
+            }
+            wait = document.getElementsByClassName("wait");
+            for (var i = 0; i < wait.length; i++) {
+                wait[i].style.display = "block";
+            }
+            blue = document.getElementsByClassName("bluePill");
+            for (var i = 0; i < blue.length; i++) {
+                blue[i].style.display = "block";
+            }
+
+            document.getElementById('metaText').style.display = "none";
+            document.getElementById('bluePillText2').style.display = "inline";
+            document.getElementById('how-umap-works').scrollIntoView()
+        }
+    </script>
+    <!-- Prism.js -->
+    <script src="scripts/prism.js"></script>
+</body>
+
+</html>

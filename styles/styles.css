@@ -1,0 +1,302 @@
+/* 
+    Original Author: Subhankar Mishra
+    Edited By: Spandan Anupam and Jyotirmaya Shivottam
+*/
+
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans&display=swap");
+
+.redPill, .bluePill, .wait, #redPillText, #bluePillText2, .redPillList, .redPillLi {
+    display: none;
+}
+
+.katex-display > .katex {
+    display: inline-block;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow-x: scroll;
+    text-align: initial;
+}
+
+.katex-display > .katex::-webkit-scrollbar {
+    display: none;
+}
+
+.katex {
+    font: normal 1.21em KaTeX_Main, Times New Roman, serif;
+    line-height: 1.2;
+    white-space: normal;
+    text-indent: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: #f7f7f7;
+    font-family: "Nunito Sans";
+    text-align: justify;
+}
+.container {
+    position: relative;
+    margin: 0 auto;
+    max-width: 790px;
+    width: 100%;
+    margin-top: 45px;
+    box-sizing: border-box;
+}
+
+ul {
+    margin-top: 4px;
+}
+
+code {
+    font-size: 15px;
+}
+
+pre[class*="language-"] {
+    font-size: 90% !important;
+    margin: 10px auto !important;
+}
+
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+h1,
+h2 {
+    display: inline;
+}
+
+table {
+    border-spacing: 1em 0.5em;
+    padding: 0 2em 1em 0;
+}
+
+.grid-container {
+    display: grid;
+    grid-gap: 10px 10px;
+}
+
+a:link {
+    text-decoration: none;
+    color: DodgerBlue;
+}
+a:visited {
+    text-decoration: none;
+    color: RoyalBlue;
+}
+
+.meta {
+    position: relative;
+    width: 366px;
+    height: 350px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-image: url('../images/maymay.jpg');
+    margin: 0 auto;
+    margin-bottom: 12px;
+}
+
+.meta > sub {
+    position: absolute;
+    bottom: 10px;
+    left: 105px;
+}
+
+#redP {
+    width: 20px;
+    height: 22px;
+    position: absolute;
+    left: 63px;
+    bottom: 70px;
+    opacity: 0;
+}
+
+#blueP {
+    width: 20px;
+    height: 22px;
+    position: absolute;
+    right: 56px;
+    bottom: 70px;
+    opacity: 0;
+}
+
+.umap-img {
+    display: block;
+    margin: 12px auto;
+    height: 250px;
+    width: 435px;
+}
+
+.complex {
+    height: 300px;
+    width: 300px;
+}
+
+#data-images {
+    text-align: center;
+}
+
+.data-imgs {
+    display: inline;
+    margin: 12px;
+    height: 240px;
+    width: 344px;
+    background-color: white;
+}
+
+.int-plots, .stat-plots {
+    text-align: center;
+}
+
+.int-plots > .bk, .stat-plots > img{
+    display: inline-block;
+    margin: 12px;
+}
+
+.stat-plots > img {
+    background-color: #2D2D2D;
+}
+
+.tables {
+    text-align: center;
+}
+
+.tables > img {
+    display: inline;
+    margin: 12px;
+    height: 240px;
+    width: 300px;
+}
+
+img:hover {
+    transition: transform 0.25s ease;
+    transform: scale(1.1);
+}
+
+#toTop {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99;
+    border: none;
+    outline: none;
+    background-color: rgba(0, 89, 255, 0.4);
+    backdrop-filter: blur(20px);
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 18px;
+}
+
+#toTop:hover {
+    background-color: rgb(78, 113, 136); /* Add a dark-grey background on hover */
+}
+
+@media (max-width: 440px) {
+    body {
+        font-size: 90%;
+    }
+
+    .container {
+        max-width: 95%;
+    }
+
+    .meta {
+        width: 280px;
+        height: 265px;
+    }
+
+    .meta > sub {
+        position: absolute;
+        bottom: 8px;
+        left: 65px;
+    }
+
+    .umap-img {
+        margin: 12px auto;
+        height: 180px;
+        width: 260px;
+    }
+
+    .data-imgs {
+        margin: 12px auto;
+        height: 220px;
+        width: 260px;
+    }
+
+    .int-plots {
+        overflow: scroll;
+    }
+
+    .int-plots > .bk-root {
+        margin: 10px;
+    }
+    
+    .stat-plots > img{
+        margin: 10px;
+        width: 80%;
+        height: 80%;
+    }
+
+    .tables > img {
+        margin: 10px;
+        height: 220px;
+        width: 270px;
+    }
+
+    .references > ul {
+        max-width: 80%;
+    }
+
+    #toTop {
+        bottom: 15px;
+        right: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+}
+@media (min-width: 550px) {
+    .container {
+        width: 80%;
+    }
+}
+
+/* For devices larger than 400px */
+@media (min-width: 400px) {
+    .container {
+        width: 85%;
+        padding: 0;
+        margin-top: 45px;
+    }
+}
+@media (min-width: 550px) {
+    .container {
+        width: 80%;
+    }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #18191b;
+        color: rgb(219, 218, 218);
+    }
+    h1 {
+        color: whitesmoke;
+    }
+    a:link {
+        color: rgb(182, 182, 255);
+    }
+    a:visited {
+        color: rgb(182, 182, 255);
+    }
+}
